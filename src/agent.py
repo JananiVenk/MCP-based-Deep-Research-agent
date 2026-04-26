@@ -103,7 +103,9 @@ async def fetch_from_news(query: str) -> list[dict]:
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.call_tool("fetch_news", {"query": query, "num_articles": 10})
+                print(result)
                 text = result.content[0].text
+                print(text)
                 if not text or not text.strip():
                     return []
                 return json.loads(text)
@@ -117,9 +119,7 @@ async def fetch_from_arxiv(query: str) -> list[dict]:
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.call_tool("fetch_arxiv", {"query": query, "num_papers": 5})
-                print(result)
                 text = result.content[0].text
-                print(text)
                 if not text or not text.strip():
                     return []
                 return json.loads(text)
@@ -255,13 +255,13 @@ def build_graph():
     graph.add_node("synthesize", synthesize_node)
 
     graph.set_entry_point("fetch")
-    graph.add_edge("fetch", "retrieve")
-    graph.add_conditional_edges("retrieve", should_fallback, {
-        "fallback": "fallback",
-        "synthesize": "synthesize"
-    })
-    graph.add_edge("fallback", "synthesize")
-    graph.add_edge("synthesize", END)
+    # graph.add_edge("fetch", "retrieve")
+    # graph.add_conditional_edges("retrieve", should_fallback, {
+    #     "fallback": "fallback",
+    #     "synthesize": "synthesize"
+    # })
+    # graph.add_edge("fallback", "synthesize")
+    # graph.add_edge("synthesize", END)
 
     return graph.compile()
 
