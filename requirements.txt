@@ -6,7 +6,7 @@ sentence-transformers
 mcp
 python-dotenv
 newsapi-python
-duckduckgo-search
+ddgs
 beautifulsoup4
 requests
 supabase
