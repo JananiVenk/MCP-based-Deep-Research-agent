@@ -12,9 +12,9 @@ from mcp.client.stdio import stdio_client, StdioServerParameters
 from sentence_transformers import SentenceTransformer
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
+import nest_asyncio
 
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_DATASETS_OFFLINE"] = "1"
+nest_asyncio.apply()
 
 load_dotenv()
 gemini = genai.Client(api_key=os.getenv("GEMINI_KEY"))
@@ -33,7 +33,8 @@ collection = chroma_client.get_or_create_collection("research_articles")
 
 news_server_params = StdioServerParameters(
     command="python",
-    args=["-m", "src.news_server"]
+    args=["-m", "src.news_server"],
+    env={"NEWSAPI_KEY": os.getenv("NEWSAPI_KEY")}
 )
 
 arxiv_server_params = StdioServerParameters(
