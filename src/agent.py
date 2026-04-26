@@ -138,7 +138,7 @@ def retrieve_node(state: AgentState) -> AgentState:
     for doc, meta in zip(results["documents"][0], results["metadatas"][0]):
         chunks.append({"text": doc, "source": meta["source"], "url": meta["url"]})
 
-    needs_fallback = min(distances) > 1.0
+    needs_fallback = min(distances) > 1.1
 
     return {**state, "chunks": chunks, "needs_fallback": needs_fallback}
 
