@@ -25,7 +25,7 @@ supabase: Client = create_client(
     os.getenv("SUPABASE_KEY")
 )
 
-CACHE_TTL_HOURS = 1  # answers older than this are considered stale
+CACHE_TTL_HOURS = 6  # answers older than this are considered stale
 
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 chroma_client = chromadb.Client()
