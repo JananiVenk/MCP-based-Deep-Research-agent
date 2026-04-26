@@ -92,7 +92,7 @@ mcp_research_agent/
 
 **1. Clone the repo**
 ```bash
-git clone https://github.com/yourusername/mcp-research-agent.git
+git clone https://github.com/JananiVenk/MCP-based-Deep-Research-agent.git
 cd mcp-research-agent
 ```
 
