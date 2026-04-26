@@ -29,8 +29,8 @@ def extract_page_content(url: str, max_chars: int = 2000) -> str:
 async def list_tools() -> list[types.Tool]:
     return [
         types.Tool(
-            name="fetch_duckduckgo",
-            description="Fetches web search results from DuckDuckGo with full page content extraction",
+            name="fetch_web",
+            description="Fetches web search results from Internet with full page content extraction",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -51,7 +51,7 @@ async def list_tools() -> list[types.Tool]:
 
 @app.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
-    if name == "fetch_duckduckgo":
+    if name == "fetch_web":
         query = arguments["query"]
         num_results = arguments.get("num_results", 5)
 
@@ -61,7 +61,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
                 full_content = extract_page_content(r["href"])
                 results.append({
                     "title": r["title"],
-                    "source": "DuckDuckGo",
+                    "source": "BeautifulSoup",
                     "description": r["body"],
                     "content": full_content if full_content else r["body"],
                     "url": r["href"],
