@@ -1,11 +1,11 @@
 # MCP Research Agent
 
-An agentic research assistant built with the Model Context Protocol (MCP), LangGraph, and Ollama. It queries multiple data sources in real time, embeds results into a vector store, and synthesizes cited answers using Mistral.
+An agentic research assistant built with the Model Context Protocol (MCP), LangGraph, and Google Gemini. It queries multiple data sources in real time, embeds results into a vector store, and synthesizes cited answers using Gemini 2.5 Flash.
 
-![Python](https://img.shields.io/badge/Python-3.11-blue)
-![LangGraph](https://img.shields.io/badge/LangGraph-agentic-green)
-![Ollama](https://img.shields.io/badge/Ollama-Mistral-purple)
-![Tests](https://img.shields.io/badge/tests-11%20passed-brightgreen)
+[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://www.python.org)
+[![LangGraph](https://img.shields.io/badge/LangGraph-agentic-green)](https://github.com/langchain-ai/langgraph)
+[![Gemini](https://img.shields.io/badge/Gemini-2.5--flash-blue)](https://ai.google.dev)
+[![Tests](https://img.shields.io/badge/tests-11%20passed-brightgreen)](https://pytest.org)
 
 ---
 
@@ -22,32 +22,31 @@ LangGraph Agent (src/agent.py) ← MCP Client
 │  fetch_node                         │
 │  ├── MCP → news_server.py (NewsAPI) │
 │  └── MCP → arxiv_server.py (arXiv)  │
-│  └── MCP → web_server.py (BS4)      │
 └─────────────────────────────────────┘
     ↓
 ChromaDB (vector store + embeddings)
     ↓
-retrieve_node → relevance check (min distance > 1.1)
+retrieve_node → relevance check (min distance > 1.0)
     ↓
-┌─────────────────────────────────┐
-│  Relevant?                      │
-│  YES → synthesize_node (Ollama) │
-│  NO  → fallback_node (DDG)      │
-└─────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│  Relevant?                               │
+│  YES → synthesize_node (Gemini)          │
+│  NO  → fallback_node (DuckDuckGo + BS4)  │
+└──────────────────────────────────────────┘
     ↓
-Mistral (via Ollama) → cited answer
+Gemini 2.5 Flash → cited answer
 ```
 
 ---
 
 ## Features
 
-- **3 MCP servers** — NewsAPI, arXiv, DuckDuckGo, each exposing tools via the MCP protocol
-- **LangGraph orchestration** — fetch → retrieve → relevance check → synthesize/fallback
-- **Smart fallback** — relevance-based DuckDuckGo fallback using min cosine distance threshold (empirically derived via AB testing)
+- **3 MCP servers** — NewsAPI, arXiv, and DuckDuckGo, each exposing tools via the MCP protocol
+- **LangGraph orchestration** — fetch → retrieve → relevance check → synthesize/fallback pipeline
+- **Smart fallback** — relevance-based DuckDuckGo fallback using min cosine distance threshold (empirically derived via A/B testing)
 - **Full page content extraction** — BeautifulSoup scrapes full article text from DuckDuckGo results for richer answers
 - **Cited answers** — every claim is attributed to its source
-- **11 tests** — 5 AB tests validating fallback threshold, 6 unit tests for core logic
+- **11 tests** — 5 A/B tests validating fallback threshold, 6 unit tests for core logic
 
 ---
 
@@ -55,14 +54,14 @@ Mistral (via Ollama) → cited answer
 
 | Component | Technology |
 |---|---|
-| LLM | Ollama (Mistral) |
+| LLM | Google Gemini 2.5 Flash |
 | Agent framework | LangGraph |
 | MCP protocol | mcp Python SDK |
 | Vector store | ChromaDB |
 | Embeddings | SentenceTransformers (all-MiniLM-L6-v2) |
 | News data | NewsAPI |
 | Research data | arXiv |
-| Web fallback | DuckDuckGo (ddgs) |
+| Web fallback | DuckDuckGo (ddgs) + BeautifulSoup |
 | UI | Streamlit |
 | Testing | pytest |
 
@@ -109,28 +108,22 @@ source venv/bin/activate  # Mac/Linux
 pip install -r requirements.txt
 ```
 
-**4. Pull the Mistral model**
-```bash
-ollama pull mistral
+**4. Add API keys** — create a `.env` file:
 ```
-
-**5. Add API keys**
-
-Create a `.env` file:
-
-```env
-NEWSAPI_KEY=your_key_here
+NEWSAPI_KEY=your_newsapi_key_here
+GEMINI_KEY=your_gemini_api_key_here
 ```
 
 - NewsAPI key: [newsapi.org](https://newsapi.org) (free tier — 100 requests/day)
-- DuckDuckGo: no key needed
+- Gemini API key: [ai.google.dev](https://ai.google.dev) (free tier available)
+- BeautifulSoup: no key needed
 
-**6. Run the app**
+**5. Run the app**
 ```bash
 streamlit run app.py
 ```
 
-**7. Run tests**
+**6. Run tests**
 ```bash
 pytest tests/ -v
 ```
@@ -139,27 +132,22 @@ pytest tests/ -v
 
 ## Example Queries
 
-**News query** — uses NewsAPI + arXiv
-> "What is happening with OpenAI?"
-
-**Research query** — uses arXiv
-> "Latest developments in large language models"
-
-**General query** — triggers DuckDuckGo fallback
-> "What are the best Netflix shows to watch in 2026?"
+- **News query** (uses NewsAPI + arXiv): *"What is happening with OpenAI?"*
+- **Research query** (uses arXiv): *"Latest developments in large language models"*
+- **General query** (triggers BeautifulSoup fallback): *"What are the best Netflix shows to watch in 2026?"*
 
 ---
 
-## AB Testing — Fallback Threshold
+## A/B Testing — Fallback Threshold
 
-During development, the fallback logic was triggering incorrectly for news queries. Two threshold strategies were AB tested across 4 query types:
+During development, the fallback logic was triggering incorrectly for news queries. Two threshold strategies were A/B tested across 4 query types:
 
 | Strategy | Logic | Accuracy |
 |---|---|---|
 | Version A (baseline) | avg(distances) > 0.7 | 2/4 (50%) |
 | Version B (current) | min(distances) > 1.1 | 3/4 (75%) |
 
-Version B uses the minimum distance (best match) rather than the average, making it robust to irrelevant chunks inflating the score. The threshold of 1.1 was empirically derived from the distance distribution of the all-MiniLM-L6-v2 embedding model.
+Version B uses the minimum distance (best match) rather than the average, making it robust to irrelevant chunks inflating the score. The threshold of 1.0 was empirically derived from the distance distribution of the all-MiniLM-L6-v2 embedding model.
 
 ---
 
