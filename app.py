@@ -138,7 +138,7 @@ st.markdown("""
 <div class="status-bar">
   <span><span class="status-dot"></span>3 MCP servers active</span>
   <span><span class="status-dot"></span>ChromaDB ready</span>
-  <span><span class="status-dot"></span>Phi3</span>
+  <span><span class="status-dot"></span>Mistral</span>
 </div>
 """, unsafe_allow_html=True)
 
