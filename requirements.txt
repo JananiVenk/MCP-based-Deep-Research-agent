@@ -1,0 +1,16 @@
+ollama
+arxiv
+beautifulsoup4
+chromadb
+ddgs
+langchain
+langchain-community
+langgraph
+langgraph-checkpoint
+mcp
+newsapi-python
+python-dotenv
+requests
+sentence-transformers
+streamlit
+pytest
