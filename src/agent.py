@@ -197,7 +197,7 @@ def retrieve_node(state: AgentState) -> AgentState:
     return {**state, "chunks": chunks, "needs_fallback": needs_fallback}
 
 def fallback_node(state: AgentState) -> AgentState:
-    print(">> Results not relevant enough, falling back to BeautifulSoup...")
+    print(">> Results not relevant enough, falling back to DuckDuckGo...")
     web_results = asyncio.run(fetch_from_web(state["query"]))
     print(f"   Got {len(web_results)} web results")
 
@@ -224,25 +224,37 @@ def should_fallback(state: AgentState) -> str:
 def synthesize_node(state: AgentState) -> AgentState:
     print(">> Synthesizing answer with Gemini-2.5-flash...")
     if state["used_fallback"]:
-        print("   (using BeautifulSoup fallback results)")
+        print("   (using DuckDuckGo fallback results)")
 
-    context = "\n\n".join([f"[{c['source']}]: {c['text']}" for c in state["chunks"]])
+    source_type = "web search results" if state["used_fallback"] else "news and research articles"
+    context = "\n\n".join([
+        f"[Source {i+1} | {c['source']}]\n{c['text']}\nURL: {c['url']}"
+        for i, c in enumerate(state["chunks"])
+    ])
 
     message = gemini.models.generate_content(
         model="gemini-2.5-flash",
-        contents=f"""Answer the following question using only the context provided.
-Cite the source for each claim.
+        contents=f"""You are a precise research assistant. Answer the user's question using ONLY the {source_type} provided below.
 
-Context:
+INSTRUCTIONS:
+- Give a clear, well-structured answer in 2-4 paragraphs
+- Cite sources inline using the format [Source N] after each claim
+- If multiple sources agree on a point, cite all of them: [Source 1, 2]
+- If sources contradict each other, explicitly note the disagreement
+- If the context does not contain enough information to answer confidently, say so clearly
+- Do not hallucinate or add information beyond what the sources provide
+- End with a "Sources" section listing each cited source and its URL
+
+CONTEXT:
 {context}
 
-Question: {state['query']}"""
+QUESTION: {state['query']}
+
+ANSWER:"""
     )
     answer = message.text
 
-    # Save fresh answer to cache
     save_to_cache(state["query"], answer)
-
     return {**state, "answer": answer}
 
 def build_graph():
