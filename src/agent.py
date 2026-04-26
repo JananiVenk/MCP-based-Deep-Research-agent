@@ -158,6 +158,7 @@ def ingest_to_chromadb(articles: list[dict], prefix: str):
 
 def fetch_node(state: AgentState) -> AgentState:
     print(">> Fetching articles from NewsAPI...")
+    print(state)
     news_articles = asyncio.run(fetch_from_news(state["query"]))
     print(f"   Got {len(news_articles)} news articles")
     if news_articles:
