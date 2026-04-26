@@ -103,9 +103,7 @@ async def fetch_from_news(query: str) -> list[dict]:
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.call_tool("fetch_news", {"query": query, "num_articles": 10})
-                print(result)
                 text = result.content[0].text
-                print(text)
                 if not text or not text.strip():
                     return []
                 return json.loads(text)
@@ -158,7 +156,6 @@ def ingest_to_chromadb(articles: list[dict], prefix: str):
 
 def fetch_node(state: AgentState) -> AgentState:
     print(">> Fetching articles from NewsAPI...")
-    print(state)
     news_articles = asyncio.run(fetch_from_news(state["query"]))
     print(f"   Got {len(news_articles)} news articles")
     if news_articles:
@@ -199,7 +196,7 @@ def retrieve_node(state: AgentState) -> AgentState:
     return {**state, "chunks": chunks, "needs_fallback": needs_fallback}
 
 def fallback_node(state: AgentState) -> AgentState:
-    print(">> Results not relevant enough, falling back to DuckDuckGo...")
+    print(">> Results not relevant enough, falling back to BeautifulSoup...")
     web_results = asyncio.run(fetch_from_web(state["query"]))
     print(f"   Got {len(web_results)} web results")
 
@@ -226,7 +223,7 @@ def should_fallback(state: AgentState) -> str:
 def synthesize_node(state: AgentState) -> AgentState:
     print(">> Synthesizing answer with Gemini-2.5-flash...")
     if state["used_fallback"]:
-        print("   (using DuckDuckgo fallback results)")
+        print("   (using BeautifulSoup fallback results)")
 
     context = "\n\n".join([f"[{c['source']}]: {c['text']}" for c in state["chunks"]])
 
