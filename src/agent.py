@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, Annotated
 import operator
-from ollama import chat
+from google import genai
 from mcp import ClientSession
 from mcp.client.stdio import stdio_client, StdioServerParameters
 from sentence_transformers import SentenceTransformer
@@ -15,6 +15,7 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
 
 load_dotenv()
+client=genai.Client(api_key=os.getenv("GEMINI_KEY"))
 
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 chroma_client = chromadb.Client()
@@ -82,7 +83,7 @@ async def fetch_from_web(query: str) -> list[dict]:
         async with stdio_client(web_server_params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
-                result = await session.call_tool("fetch_duckduckgo", {"query": query, "num_results": 5})
+                result = await session.call_tool("fetch_web", {"query": query, "num_results": 5})
                 text = result.content[0].text
                 if not text or not text.strip():
                     return []
@@ -142,7 +143,7 @@ def retrieve_node(state: AgentState) -> AgentState:
     return {**state, "chunks": chunks, "needs_fallback": needs_fallback}
 
 def fallback_node(state: AgentState) -> AgentState:
-    print(">> Results not relevant enough, falling back to DuckDuckGo...")
+    print(">> Results not relevant enough, falling back to BeautifulSoup...")
     web_results = asyncio.run(fetch_from_web(state["query"]))
     print(f"   Got {len(web_results)} web results")
 
@@ -167,26 +168,24 @@ def should_fallback(state: AgentState) -> str:
     return "synthesize"
 
 def synthesize_node(state: AgentState) -> AgentState:
-    print(">> Synthesizing answer with Phi3...")
+    print(">> Synthesizing answer with Gemini-2.5-flash...")
     if state["used_fallback"]:
         print("   (using BeautifulSoup fallback results)")
 
     context = "\n\n".join([f"[{c['source']}]: {c['text']}" for c in state["chunks"]])
 
-    message = chat(
-        model="phi3:medium",
-        messages=[{
-            "role": "user",
-            "content": f"""Answer the following question using only the context provided.
-Cite the source for each claim. Just return complete answer.
+    message = client.models.generate_content(
+        model="gemini-2.5-flash", 
+        contents=f"""Answer the following question using only the context provided.
+Cite the source for each claim.
 
 Context:
 {context}
 
 Question: {state['query']}"""
-        }]
+        
     )
-    answer = message['message']['content']
+    answer = message.text
     return {**state, "answer": answer}
 
 def build_graph():
