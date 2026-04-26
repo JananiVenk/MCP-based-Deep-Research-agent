@@ -50,6 +50,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
 
         articles = []
         for article in response["articles"]:
+            print(article)
             articles.append({
                 "title": article["title"],
                 "source": article["source"]["name"],
