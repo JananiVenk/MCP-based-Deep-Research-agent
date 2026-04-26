@@ -180,12 +180,18 @@ def retrieve_node(state: AgentState) -> AgentState:
 
     chunks = []
     distances = results["distances"][0]
+
+    # If ChromaDB is empty (fetch failed), go straight to fallback
+    if not distances:
+        print("   ChromaDB is empty — triggering fallback.")
+        return {**state, "chunks": [], "needs_fallback": True}
+
     print(f"   Minimum relevance distance: {min(distances):.3f}")
 
     for doc, meta in zip(results["documents"][0], results["metadatas"][0]):
         chunks.append({"text": doc, "source": meta["source"], "url": meta["url"]})
 
-    needs_fallback = min(distances) > 1.0
+    needs_fallback = min(distances) > 1.1
 
     return {**state, "chunks": chunks, "needs_fallback": needs_fallback}
 
