@@ -147,7 +147,7 @@ During development, the fallback logic was triggering incorrectly for news queri
 | Version A (baseline) | avg(distances) > 0.7 | 2/4 (50%) |
 | Version B (current) | min(distances) > 1.1 | 3/4 (75%) |
 
-Version B uses the minimum distance (best match) rather than the average, making it robust to irrelevant chunks inflating the score. The threshold of 1.0 was empirically derived from the distance distribution of the all-MiniLM-L6-v2 embedding model.
+Version B uses the minimum distance (best match) rather than the average, making it robust to irrelevant chunks inflating the score. The threshold of 1.1 was empirically derived from the distance distribution of the all-MiniLM-L6-v2 embedding model.
 
 ---
 
