@@ -1,5 +1,5 @@
 import streamlit as st
-from src.agent import run_agent
+from src.agent import run_agent, get_cached_answer
 
 st.set_page_config(
     page_title="MCP Research Agent",
@@ -51,12 +51,23 @@ st.markdown("""
     margin-bottom: 10px;
   }
 
-  /* User message */
   [data-testid="stChatMessageContent"] p {
     font-family: 'Source Sans 3', sans-serif;
     font-size: 15px;
     color: #1C1917;
     line-height: 1.7;
+  }
+
+  /* Cache badge */
+  .cache-badge {
+    display: inline-block;
+    background: #EFF3FA;
+    color: #1B3A6B;
+    border: 1px solid #C5D4EC;
+    border-radius: 20px;
+    font-size: 11px;
+    padding: 2px 10px;
+    margin-bottom: 8px;
   }
 
   /* Source tags */
@@ -116,14 +127,7 @@ st.markdown("""
     vertical-align: middle;
   }
 
-  /* Divider */
-  hr {
-    border: none;
-    border-top: 1px solid #E8E4DC;
-    margin: 16px 0;
-  }
-
-  /* Hide streamlit branding */
+  hr { border: none; border-top: 1px solid #E8E4DC; margin: 16px 0; }
   #MainMenu, footer, header { visibility: hidden; }
 </style>
 
@@ -139,14 +143,18 @@ st.markdown("""
   <span><span class="status-dot"></span>3 MCP servers active</span>
   <span><span class="status-dot"></span>ChromaDB ready</span>
   <span><span class="status-dot"></span>Gemini-2.5-flash</span>
+  <span><span class="status-dot"></span>Cache enabled</span>
 </div>
 """, unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Render existing chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
+        if message.get("from_cache"):
+            st.markdown('<span class="cache-badge">⚡ cached</span>', unsafe_allow_html=True)
         st.markdown(message["content"], unsafe_allow_html=True)
 
 if query := st.chat_input("Ask a research question..."):
@@ -155,8 +163,20 @@ if query := st.chat_input("Ask a research question..."):
         st.markdown(query)
 
     with st.chat_message("assistant"):
-        with st.spinner("Fetching sources and generating answer..."):
+        # Peek at cache first so we know whether to show the badge
+        is_cached = get_cached_answer(query) is not None
+
+        if is_cached:
+            st.markdown('<span class="cache-badge">⚡ cached</span>', unsafe_allow_html=True)
             response = run_agent(query)
+        else:
+            with st.spinner("Fetching sources and generating answer..."):
+                response = run_agent(query)
+
         st.markdown(response, unsafe_allow_html=True)
 
-    st.session_state.messages.append({"role": "assistant", "content": response})
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": response,
+        "from_cache": is_cached
+    })
