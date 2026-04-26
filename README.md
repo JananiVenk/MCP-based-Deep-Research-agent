@@ -21,7 +21,8 @@ LangGraph Agent (src/agent.py) ← MCP Client
 ┌─────────────────────────────────────┐
 │  fetch_node                         │
 │  ├── MCP → news_server.py (NewsAPI) │
-│  └── MCP → arxiv_server.py (arXiv) │
+│  └── MCP → arxiv_server.py (arXiv)  │
+│  └── MCP → web_server.py (BS4)      │
 └─────────────────────────────────────┘
     ↓
 ChromaDB (vector store + embeddings)
