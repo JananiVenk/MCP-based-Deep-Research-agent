@@ -196,7 +196,7 @@ def retrieve_node(state: AgentState) -> AgentState:
     return {**state, "chunks": chunks, "needs_fallback": needs_fallback}
 
 def fallback_node(state: AgentState) -> AgentState:
-    print(">> Results not relevant enough, falling back to BeautifulSoup...")
+    print(">> Results not relevant enough, falling back to DuckDuckGo...")
     web_results = asyncio.run(fetch_from_web(state["query"]))
     print(f"   Got {len(web_results)} web results")
 
@@ -223,7 +223,7 @@ def should_fallback(state: AgentState) -> str:
 def synthesize_node(state: AgentState) -> AgentState:
     print(">> Synthesizing answer with Gemini-2.5-flash...")
     if state["used_fallback"]:
-        print("   (using BeautifulSoup fallback results)")
+        print("   (using DuckDuckgo fallback results)")
 
     context = "\n\n".join([f"[{c['source']}]: {c['text']}" for c in state["chunks"]])
 
