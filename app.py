@@ -130,7 +130,7 @@ st.markdown("""
 <div class="agent-header">
   <div>
     <div class="agent-header-title">MCP Research Agent</div>
-    <div class="agent-header-caption">NewsAPI &nbsp;·&nbsp; arXiv &nbsp;·&nbsp; BeautifulSoup &nbsp;·&nbsp; Ollama</div>
+    <div class="agent-header-caption">NewsAPI &nbsp;·&nbsp; arXiv &nbsp;·&nbsp; BeautifulSoup &nbsp;·&nbsp; Gemini</div>
   </div>
   <span style="font-size: 28px;">🔍</span>
 </div>
@@ -138,7 +138,7 @@ st.markdown("""
 <div class="status-bar">
   <span><span class="status-dot"></span>3 MCP servers active</span>
   <span><span class="status-dot"></span>ChromaDB ready</span>
-  <span><span class="status-dot"></span>Mistral</span>
+  <span><span class="status-dot"></span>Gemini-2.5-flash</span>
 </div>
 """, unsafe_allow_html=True)
 
