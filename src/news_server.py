@@ -38,7 +38,6 @@ async def list_tools() -> list[types.Tool]:
 @app.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
     if name == "fetch_news":
-        print(arguments)
         query = arguments["query"]
         num_articles = arguments.get("num_articles", 10)
 
@@ -48,7 +47,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             sort_by="relevancy",
             page_size=num_articles
         )
-        print(response)
+
         articles = []
         for article in response["articles"]:
             articles.append({
