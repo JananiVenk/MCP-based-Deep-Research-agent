@@ -117,7 +117,9 @@ async def fetch_from_arxiv(query: str) -> list[dict]:
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.call_tool("fetch_arxiv", {"query": query, "num_papers": 5})
+                print(result)
                 text = result.content[0].text
+                print(text)
                 if not text or not text.strip():
                     return []
                 return json.loads(text)
