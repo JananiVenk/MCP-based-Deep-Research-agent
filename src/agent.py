@@ -254,13 +254,13 @@ def build_graph():
     graph.add_node("synthesize", synthesize_node)
 
     graph.set_entry_point("fetch")
-    # graph.add_edge("fetch", "retrieve")
-    # graph.add_conditional_edges("retrieve", should_fallback, {
-    #     "fallback": "fallback",
-    #     "synthesize": "synthesize"
-    # })
-    # graph.add_edge("fallback", "synthesize")
-    # graph.add_edge("synthesize", END)
+    graph.add_edge("fetch", "retrieve")
+    graph.add_conditional_edges("retrieve", should_fallback, {
+        "fallback": "fallback",
+        "synthesize": "synthesize"
+    })
+    graph.add_edge("fallback", "synthesize")
+    graph.add_edge("synthesize", END)
 
     return graph.compile()
 
