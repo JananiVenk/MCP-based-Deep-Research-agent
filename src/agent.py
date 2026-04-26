@@ -10,12 +10,22 @@ from google import genai
 from mcp import ClientSession
 from mcp.client.stdio import stdio_client, StdioServerParameters
 from sentence_transformers import SentenceTransformer
+from supabase import create_client, Client
+from datetime import datetime, timezone, timedelta
 
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
 
 load_dotenv()
-client=genai.Client(api_key=os.getenv("GEMINI_KEY"))
+gemini = genai.Client(api_key=os.getenv("GEMINI_KEY"))
+
+# Supabase client (used only for caching)
+supabase: Client = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_KEY")
+)
+
+CACHE_TTL_HOURS = 1  # answers older than this are considered stale
 
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 chroma_client = chromadb.Client()
@@ -36,6 +46,39 @@ web_server_params = StdioServerParameters(
     args=["-m", "src.web_server"]
 )
 
+# ── Cache helpers ──────────────────────────────────────────────
+
+def get_cached_answer(query: str) -> str | None:
+    """Return a cached answer if one exists and is within TTL, else None."""
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=CACHE_TTL_HOURS)).isoformat()
+        result = supabase.table("query_cache") \
+            .select("answer") \
+            .eq("query", query) \
+            .gte("created_at", cutoff) \
+            .order("created_at", desc=True) \
+            .limit(1) \
+            .execute()
+        if result.data:
+            print(">> Cache hit — returning cached answer.")
+            return result.data[0]["answer"]
+    except Exception as e:
+        print(f"   Cache lookup failed: {e}")
+    return None
+
+def save_to_cache(query: str, answer: str):
+    """Save a query+answer to Supabase cache."""
+    try:
+        supabase.table("query_cache").insert({
+            "query": query,
+            "answer": answer,
+        }).execute()
+        print("   Saved to cache.")
+    except Exception as e:
+        print(f"   Cache save failed: {e}")
+
+# ── Agent state ────────────────────────────────────────────────
+
 class AgentState(TypedDict):
     query: str
     articles_ingested: bool
@@ -46,9 +89,13 @@ class AgentState(TypedDict):
     avg_distance: float
     messages: Annotated[list, operator.add]
 
+# ── Utilities ──────────────────────────────────────────────────
+
 def chunk_text(text: str, chunk_size: int = 200) -> list[str]:
     words = text.split()
     return [" ".join(words[i:i+chunk_size]) for i in range(0, len(words), chunk_size)]
+
+# ── MCP fetchers ───────────────────────────────────────────────
 
 async def fetch_from_news(query: str) -> list[dict]:
     try:
@@ -105,6 +152,8 @@ def ingest_to_chromadb(articles: list[dict], prefix: str):
                 ids=[f"{prefix}{i}_chunk{j}"]
             )
 
+# ── Graph nodes ────────────────────────────────────────────────
+
 def fetch_node(state: AgentState) -> AgentState:
     print(">> Fetching articles from NewsAPI...")
     news_articles = asyncio.run(fetch_from_news(state["query"]))
@@ -131,14 +180,12 @@ def retrieve_node(state: AgentState) -> AgentState:
 
     chunks = []
     distances = results["distances"][0]
-
-
-    print(f"   Minumum relevance distance: {min(distances):.3f}")
+    print(f"   Minimum relevance distance: {min(distances):.3f}")
 
     for doc, meta in zip(results["documents"][0], results["metadatas"][0]):
         chunks.append({"text": doc, "source": meta["source"], "url": meta["url"]})
 
-    needs_fallback = min(distances) > 1.1
+    needs_fallback = min(distances) > 1.0
 
     return {**state, "chunks": chunks, "needs_fallback": needs_fallback}
 
@@ -174,8 +221,8 @@ def synthesize_node(state: AgentState) -> AgentState:
 
     context = "\n\n".join([f"[{c['source']}]: {c['text']}" for c in state["chunks"]])
 
-    message = client.models.generate_content(
-        model="gemini-2.5-flash", 
+    message = gemini.models.generate_content(
+        model="gemini-2.5-flash",
         contents=f"""Answer the following question using only the context provided.
 Cite the source for each claim.
 
@@ -183,9 +230,12 @@ Context:
 {context}
 
 Question: {state['query']}"""
-        
     )
     answer = message.text
+
+    # Save fresh answer to cache
+    save_to_cache(state["query"], answer)
+
     return {**state, "answer": answer}
 
 def build_graph():
@@ -207,7 +257,14 @@ def build_graph():
 
     return graph.compile()
 
+# ── Entry point ────────────────────────────────────────────────
+
 def run_agent(query: str) -> str:
+    # Check cache before running the full agent
+    cached = get_cached_answer(query)
+    if cached:
+        return cached
+
     graph = build_graph()
     result = graph.invoke({
         "query": query,
