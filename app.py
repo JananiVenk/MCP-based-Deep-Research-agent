@@ -134,7 +134,7 @@ st.markdown("""
 <div class="agent-header">
   <div>
     <div class="agent-header-title">MCP Research Agent</div>
-    <div class="agent-header-caption">NewsAPI &nbsp;·&nbsp; arXiv &nbsp;·&nbsp; BeautifulSoup &nbsp;·&nbsp; Gemini</div>
+    <div class="agent-header-caption">NewsAPI &nbsp;·&nbsp; arXiv &nbsp;·&nbsp; DuckDuckGo &nbsp;·&nbsp; Gemini</div>
   </div>
   <span style="font-size: 28px;">🔍</span>
 </div>
