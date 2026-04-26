@@ -47,10 +47,9 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             sort_by="relevancy",
             page_size=num_articles
         )
-
+        print(response)
         articles = []
         for article in response["articles"]:
-            print(article)
             articles.append({
                 "title": article["title"],
                 "source": article["source"]["name"],
