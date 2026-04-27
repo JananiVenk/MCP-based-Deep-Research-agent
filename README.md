@@ -1,13 +1,3 @@
----
-title: MCP Research Agent
-emoji: 🔍
-colorFrom: blue
-colorTo: indigo
-sdk: streamlit
-sdk_version: 1.41.0
-app_file: app.py
-pinned: false
----
 # MCP Research Agent
 
 An agentic research assistant built with the Model Context Protocol (MCP), LangGraph, and Google Gemini. It queries multiple data sources in real time, embeds results into a vector store, and synthesizes cited answers using Gemini 2.5 Flash.
@@ -126,7 +116,7 @@ GEMINI_KEY=your_gemini_api_key_here
 
 - NewsAPI key: [newsapi.org](https://newsapi.org) (free tier — 100 requests/day)
 - Gemini API key: [ai.google.dev](https://ai.google.dev) (free tier available)
-- BeautifulSoup: no key needed
+- DuckDuckGo: no key needed
 
 **5. Run the app**
 ```bash
@@ -144,7 +134,7 @@ pytest tests/ -v
 
 - **News query** (uses NewsAPI + arXiv): *"What is happening with OpenAI?"*
 - **Research query** (uses arXiv): *"Latest developments in large language models"*
-- **General query** (triggers BeautifulSoup fallback): *"What are the best Netflix shows to watch in 2026?"*
+- **General query** (triggers DuckDuckgo fallback): *"What are the best Netflix shows to watch in 2026?"*
 
 ---
 
