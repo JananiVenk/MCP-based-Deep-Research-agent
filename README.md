@@ -7,6 +7,9 @@ An agentic research assistant built with the Model Context Protocol (MCP), LangG
 [![Gemini](https://img.shields.io/badge/Gemini-2.5--flash-blue)](https://ai.google.dev)
 [![Supabase](https://img.shields.io/badge/Supabase-cache-darkgreen)](https://supabase.com)
 [![Tests](https://img.shields.io/badge/tests-11%20passed-brightgreen)](https://pytest.org)
+[![HuggingFace](https://img.shields.io/badge/🤗%20Live%20Demo-HuggingFace-yellow)](https://huggingface.co/spaces/JananiV/mcp-research-agent)
+
+**🔍 [Try it live on Hugging Face Spaces](https://huggingface.co/spaces/JananiV/mcp-research-agent)**
 
 ---
 
@@ -15,7 +18,7 @@ An agentic research assistant built with the Model Context Protocol (MCP), LangG
 ```
 User Query
     ↓
-Check Supabase cache (TTL: 6 hour)
+Check Supabase cache (TTL: 1 hour)
     ↓
 ┌─────────────────────────────────────┐
 │  Cache hit? → return cached answer  │
@@ -159,15 +162,27 @@ pytest tests/ -v
 
 ---
 
-## Deployment (Hugging Face Spaces)
+## Deployment
 
-This app is deployed on [Hugging Face Spaces](https://huggingface.co/spaces/JananiVenk/mcp-research-agent).
+This app is live on Hugging Face Spaces — **[try it here](https://huggingface.co/spaces/JananiV/mcp-research-agent)**.
 
 To deploy your own:
 1. Create a new Space at [huggingface.co/new-space](https://huggingface.co/new-space) with SDK set to **Streamlit**
-2. Add your Space as a git remote: `git remote add space https://huggingface.co/spaces/YourUsername/mcp-research-agent`
-3. Add secrets in Space Settings → Variables and secrets
-4. Push: `git push space main`
+2. Add your Space as a git remote:
+```bash
+git remote add space https://huggingface.co/spaces/YourUsername/mcp-research-agent
+```
+3. Add secrets in Space **Settings → Variables and secrets**:
+```
+NEWSAPI_KEY=...
+GEMINI_KEY=...
+SUPABASE_URL=...
+SUPABASE_KEY=...
+```
+4. Push:
+```bash
+git push space main
+```
 
 ---
 
@@ -177,7 +192,7 @@ To protect free tier API limits, query answers are cached in Supabase for **6 ho
 
 To change the TTL, edit this line in `src/agent.py`:
 ```python
-CACHE_TTL_HOURS = 6  # change to 24 for longer caching
+CACHE_TTL_HOURS = 6  # change to 12 or 24 for longer caching
 ```
 
 ---
